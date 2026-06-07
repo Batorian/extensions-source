@@ -15,7 +15,7 @@ if (theme != null) evaluationDependsOn(theme.path)
 android {
     compileSdk = AndroidConfig.compileSdk
 
-    namespace = "eu.kanade.tachiyomi.extension"
+    namespace = "eu.kanade.tachiyomi.novelextension"
 
     sourceSets {
         main {
@@ -45,7 +45,6 @@ android {
                 appName : "Tsundoku: $extName",
                 extClass: extClass,
                 nsfw    : project.ext.find("isNsfw") ? 1 : 0,
-                novel   : project.ext.find("isNovel") ? 1 : 0,
         ]
         String baseUrl = project.ext.find("baseUrl") ?: ""
         if (theme != null && !baseUrl.isEmpty()) {

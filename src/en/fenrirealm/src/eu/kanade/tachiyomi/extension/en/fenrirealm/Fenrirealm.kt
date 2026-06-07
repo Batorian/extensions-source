@@ -1,4 +1,4 @@
-﻿package eu.kanade.tachiyomi.extension.en.fenrirealm
+﻿package eu.kanade.tachiyomi.novelextension.en.fenrirealm
 
 import android.content.SharedPreferences
 import androidx.preference.PreferenceScreen
