@@ -2,7 +2,6 @@ package novelsourcery.lib.siteparsers.parsers
 
 import novelsourcery.lib.siteparsers.SiteParser
 import novelsourcery.lib.siteparsers.combined
-import novelsourcery.lib.siteparsers.domainKey
 import okhttp3.Headers
 import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
@@ -19,20 +18,25 @@ class NovelWorldTranslationsParser : SiteParser {
         }.forEach { it.parent()?.remove() }
         val title = doc.select(".entry-title").first()?.text() ?: ""
 
+        // Don't let Jsoup normalize away the blank lines this site uses to mark
+        // paragraph breaks inside text nodes.
+        doc.outputSettings().prettyPrint(false)
         val rawHtml = doc.select(".entry-content").html()
 
         val paragraphs = rawHtml
             .split(Regex("\n\\s*\n+"))
             .mapNotNull { chunk ->
                 val fragment = Jsoup.parseBodyFragment(chunk).body()
-                // Drop the indent-only spans (e.g. <span>&nbsp;&nbsp; &nbsp;</span>)
                 fragment.select("span").forEach { el ->
                     if (el.text().replace("\u00a0", "").trim().isEmpty()) el.remove()
                 }
-                val html = fragment.html()
-                    .replace("&nbsp;", "")
-                    .trim()
-                if (html.isEmpty()) null else "<p>$html</p>"
+                // Check actual visible text, not the serialized markup length —
+                // an empty <p></p> or <div class="separator"></div> still produces
+                // a non-empty HTML string.
+                val text = fragment.text().replace("\u00a0", "").trim()
+                if (text.isEmpty()) return@mapNotNull null
+                val html = fragment.html().replace("&nbsp;", "").trim()
+                "<p>$html</p>"
             }
 
         return combined(title, paragraphs.joinToString(""))
