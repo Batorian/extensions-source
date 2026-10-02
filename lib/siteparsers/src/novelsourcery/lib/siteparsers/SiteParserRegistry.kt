@@ -7,7 +7,6 @@ import novelsourcery.lib.siteparsers.parsers.BrightNovelsParser
 import novelsourcery.lib.siteparsers.parsers.CanonStoryParser
 import novelsourcery.lib.siteparsers.parsers.DaoistParser
 import novelsourcery.lib.siteparsers.parsers.DreamyTranslationsParser
-import novelsourcery.lib.siteparsers.parsers.FenrirRealmParser
 import novelsourcery.lib.siteparsers.parsers.FictionReadParser
 import novelsourcery.lib.siteparsers.parsers.GenericFallbackParser
 import novelsourcery.lib.siteparsers.parsers.GenesisStudioParser
@@ -62,7 +61,6 @@ object SiteParserRegistry {
         CanonStoryParser(),
         DaoistParser(),
         DreamyTranslationsParser(),
-        FenrirRealmParser(),
         FictionReadParser(),
         GenesisStudioParser(),
         GreenzParser(),
