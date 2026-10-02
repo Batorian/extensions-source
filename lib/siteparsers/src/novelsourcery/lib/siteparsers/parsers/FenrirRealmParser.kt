@@ -1,59 +1,57 @@
 package novelsourcery.lib.siteparsers.parsers
 
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import novelsourcery.lib.siteparsers.SiteParser
 import novelsourcery.lib.siteparsers.combined
 import novelsourcery.lib.siteparsers.domainKey
 import okhttp3.Headers
 import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
+import okhttp3.Request
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
-import org.jsoup.nodes.TextNode
-
-private val INVISIBLE_CHARS = Regex("[\\u200B\\u200C\\u200D\\u2060\\uFEFF]")
 
 class FenrirRealmParser : SiteParser {
     override fun canHandle(doc: Document, url: HttpUrl) = url.domainKey() == "fenrirealm"
 
     override fun parse(doc: Document, url: HttpUrl, client: OkHttpClient, headers: Headers): String {
-        // Reuse the page's own path - it's already in the exact "/series/<slug>/.../chapter-N[-part]"
-        // shape the API expects, so there's no need to re-derive slug/number ourselves.
-        val apiUrl = "${url.scheme}://${url.host}/api/new/v2${url.encodedPath}"
+        val apiBaseUrl = "${url.scheme}://${url.host}/api/new/v2"
+        val response = client.newCall(
+            Request.Builder().url(apiBaseUrl + url.encodedPath).headers(headers).build(),
+        ).execute()
+        val chapter = Json.decodeFromString<ChapterDto>(response.body.string())
+        val chapterDoc = Jsoup.parseBodyFragment(chapter.content)
 
-        val response = client.newCall(okhttp3.Request.Builder().url(apiUrl).headers(headers).build()).execute()
-        val json = Json.parseToJsonElement(response.body.string()).jsonObject
+        // Matches extractChapterContentFromDOM's fetchChapterWithAPI branch, which
+        // uses the whole parsed-fragment body rather than selecting .reader-area.
+        val readerArea = chapterDoc.body()
 
-        val number = json["number"]?.jsonPrimitive?.contentOrNull
-        val rawTitle = json["name"]?.jsonPrimitive?.contentOrNull?.trim()
-        val title = rawTitle?.takeIf { it.isNotBlank() } ?: number?.let { "Chapter $it" } ?: ""
-
-        val rawContent = json["content"]?.jsonPrimitive?.content ?: ""
-        val body = Jsoup.parseBodyFragment(rawContent).body()
-
-        // Drop the anti-scraping camouflage: a <style> defining a visually-hidden
-        // class, paired with aria-hidden divs full of fake base64-looking text.
-        body.select("style").remove()
-        body.select("[aria-hidden=true]").remove()
-
-        // Strip zero-width characters injected mid-word/mid-sentence throughout the
-        // remaining text, rather than only in throwaway paragraphs.
-        body.traverse { node, _ ->
-            if (node is TextNode) {
-                val cleaned = node.text().replace(INVISIBLE_CHARS, "")
-                if (cleaned != node.text()) node.text(cleaned)
-            }
+        // Strip real comment/reaction sections structurally. Never match on prose
+        // text: a chapter sentence containing the word "comment" used to cut the
+        // rest of the chapter off.
+        readerArea.select("#comments").forEach { it.remove() }
+        readerArea.select("h3:containsOwn(What do you think)").forEach { heading ->
+            val section = heading.parents().firstOrNull { it.parent() === readerArea }
+            (section ?: heading).remove()
         }
 
-        // After stripping invisible chars, some paragraphs that were entirely made
-        // of them collapse to empty - remove those leftovers.
-        body.select("p").forEach { p ->
-            if (p.text().trim().isEmpty()) p.remove()
-        }
+        // Remove invisible garbage divs
+        val garbagePattern = "^((?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{4}))(.{1,4})?$"
+        readerArea.select("div[aria-hidden=true]:matchesOwn($garbagePattern)").forEach { it.remove() }
 
-        return combined(title, body.html())
+        val content = readerArea.children().joinToString("") { it.outerHtml() }
+        val title = chapter.name?.trim().orEmpty()
+
+        return combined(title, content)
     }
+
+    @Serializable
+    class ChapterDto(
+        val id: Int,
+        val name: String? = null,
+        val title: String? = null,
+        val content: String,
+        val has_illustration: Boolean,
+    )
 }
