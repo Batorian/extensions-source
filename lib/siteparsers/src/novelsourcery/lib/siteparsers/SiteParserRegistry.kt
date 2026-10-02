@@ -7,6 +7,7 @@ import novelsourcery.lib.siteparsers.parsers.BrightNovelsParser
 import novelsourcery.lib.siteparsers.parsers.CanonStoryParser
 import novelsourcery.lib.siteparsers.parsers.DaoistParser
 import novelsourcery.lib.siteparsers.parsers.DreamyTranslationsParser
+import novelsourcery.lib.siteparsers.parsers.FenrirRealmParser
 import novelsourcery.lib.siteparsers.parsers.FictionReadParser
 import novelsourcery.lib.siteparsers.parsers.GenericFallbackParser
 import novelsourcery.lib.siteparsers.parsers.GenesisStudioParser
@@ -17,6 +18,7 @@ import novelsourcery.lib.siteparsers.parsers.INovelTranslationParser
 import novelsourcery.lib.siteparsers.parsers.InfiniteNovelTranslationsParser
 import novelsourcery.lib.siteparsers.parsers.IsoTlsParser
 import novelsourcery.lib.siteparsers.parsers.JadeScrollsParser
+import novelsourcery.lib.siteparsers.parsers.JpTranslationsForFunParser
 import novelsourcery.lib.siteparsers.parsers.KoFiParser
 import novelsourcery.lib.siteparsers.parsers.KonkonParser
 import novelsourcery.lib.siteparsers.parsers.LeafStudioParser
@@ -60,6 +62,7 @@ object SiteParserRegistry {
         CanonStoryParser(),
         DaoistParser(),
         DreamyTranslationsParser(),
+        FenrirRealmParser(),
         FictionReadParser(),
         GenesisStudioParser(),
         GreenzParser(),
@@ -69,6 +72,7 @@ object SiteParserRegistry {
         INovelTranslationParser(),
         IsoTlsParser(),
         JadeScrollsParser(),
+        JpTranslationsForFunParser(),
         KoFiParser(),
         KonkonParser(),
         LeafStudioParser(),
